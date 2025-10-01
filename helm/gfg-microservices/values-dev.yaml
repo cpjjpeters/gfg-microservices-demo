@@ -1,0 +1,19 @@
+# Development environment values
+global:
+  environment: dev
+
+employeeService:
+  config:
+    microservices:
+      addressServiceUrl: http://address-service-dev:8081/address-service
+    database:
+      url: jdbc:mysql://mysql-dev:3306/employeedb_dev?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      username: dev_user
+      password: dev_password
+
+addressService:
+  config:
+    database:
+      url: jdbc:mysql://mysql-dev:3306/gfgmicroservicesdemo_dev
+      username: dev_user
+      password: dev_password

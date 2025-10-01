@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.employeeService.name }}
+  labels:
+    app: {{ .Values.employeeService.name }}
+    chart: {{ include "gfg-microservices.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.employeeService.name }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.employeeService.name }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Values.employeeService.name }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.employeeService.image.repository }}:{{ .Values.employeeService.image.tag }}"
+          imagePullPolicy: {{ .Values.employeeService.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.employeeService.config.server.port }}
+              protocol: TCP
+          env:
+            - name: SPRING_APPLICATION_NAME
+              value: {{ .Values.employeeService.name }}
+            - name: SERVER_PORT
+              value: "{{ .Values.employeeService.config.server.port }}"
+            - name: SERVER_SERVLET_CONTEXT_PATH
+              value: {{ .Values.employeeService.config.server.contextPath }}
+            - name: SPRING_DATASOURCE_URL
+              value: {{ .Values.employeeService.config.database.url }}
+            - name: SPRING_DATASOURCE_USERNAME
+              value: {{ .Values.employeeService.config.database.username }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: {{ .Values.employeeService.config.database.password }}
+            - name: MICROSERVICES_ADDRESS_SERVICE_URL
+              value: {{ .Values.employeeService.config.microservices.addressServiceUrl }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.employeeService.config.server.contextPath }}/actuator/health
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.employeeService.config.server.contextPath }}/actuator/health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.employeeService.resources | nindent 12 }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.addressService.name }}
+  labels:
+    app: {{ .Values.addressService.name }}
+    chart: {{ include "gfg-microservices.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.addressService.name }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.addressService.name }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Values.addressService.name }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.addressService.image.repository }}:{{ .Values.addressService.image.tag }}"
+          imagePullPolicy: {{ .Values.addressService.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.addressService.config.server.port }}
+              protocol: TCP
+          env:
+            - name: SPRING_APPLICATION_NAME
+              value: {{ .Values.addressService.name }}
+            - name: SERVER_PORT
+              value: "{{ .Values.addressService.config.server.port }}"
+            - name: SERVER_SERVLET_CONTEXT_PATH
+              value: {{ .Values.addressService.config.server.contextPath }}
+            - name: SPRING_DATASOURCE_URL
+              value: {{ .Values.addressService.config.database.url }}
+            - name: SPRING_DATASOURCE_USERNAME
+              value: {{ .Values.addressService.config.database.username }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: {{ .Values.addressService.config.database.password }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.addressService.config.server.contextPath }}/actuator/health
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.addressService.config.server.contextPath }}/actuator/health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.addressService.resources | nindent 12 }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

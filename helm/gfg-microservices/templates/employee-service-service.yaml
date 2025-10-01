@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.employeeService.name }}
+  labels:
+    app: {{ .Values.employeeService.name }}
+    chart: {{ include "gfg-microservices.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: {{ .Values.employeeService.service.type }}
+  ports:
+    - port: {{ .Values.employeeService.service.port }}
+      targetPort: {{ .Values.employeeService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Values.employeeService.name }}
+    release: {{ .Release.Name }}

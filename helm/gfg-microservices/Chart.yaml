@@ -1,0 +1,15 @@
+apiVersion: v2
+name: gfg-microservices
+description: A Helm chart for GFG Microservices Demo (Address Service and Employee Service)
+type: application
+version: 0.1.0
+appVersion: "0.0.1-SNAPSHOT"
+keywords:
+  - microservices
+  - spring-boot
+  - java
+  - demo
+home: https://github.com/your-repo/gfg-microservices-demo
+maintainers:
+  - name: GFG Team
+    email: team@example.com

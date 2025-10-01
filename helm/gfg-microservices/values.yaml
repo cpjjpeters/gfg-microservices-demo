@@ -1,0 +1,109 @@
+# Default values for gfg-microservices
+# This is a YAML-formatted file
+# Declare variables to be substituted into your templates
+
+global:
+  environment: dev
+  imageRegistry: docker.io
+  imagePullSecrets: []
+
+# Address Service Configuration
+addressService:
+  name: address-service
+  image:
+    repository: gfg/address-service
+    tag: "0.0.1-SNAPSHOT"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 8081
+    targetPort: 8081
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  config:
+    server:
+      port: 8081
+      contextPath: /address-service
+    database:
+      url: jdbc:mysql://mysql:3306/gfgmicroservicesdemo
+      username: root
+      password: MySqlR00t
+
+# Employee Service Configuration  
+employeeService:
+  name: employee-service
+  image:
+    repository: gfg/employee-service
+    tag: "0.0.1-SNAPSHOT"
+    pullPolicy: IfNotPresent
+    
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+    
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+      
+  config:
+    server:
+      port: 8080
+      contextPath: /employee-service
+    database:
+      url: jdbc:mysql://mysql:3306/employeedb?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      username: root
+      password: MySqlR00t
+    # Microservices URLs - this is the key configuration for different environments
+    microservices:
+      addressServiceUrl: http://address-service:8081/address-service
+
+# Environment-specific overrides
+environments:
+  dev:
+    employeeService:
+      config:
+        microservices:
+          addressServiceUrl: http://address-service-dev:8081/address-service
+        database:
+          url: jdbc:mysql://mysql-dev:3306/employeedb_dev?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    addressService:
+      config:
+        database:
+          url: jdbc:mysql://mysql-dev:3306/gfgmicroservicesdemo_dev
+          
+  tst:
+    employeeService:
+      config:
+        microservices:
+          addressServiceUrl: http://address-service-tst:8081/address-service
+        database:
+          url: jdbc:mysql://mysql-tst:3306/employeedb_tst?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    addressService:
+      config:
+        database:
+          url: jdbc:mysql://mysql-tst:3306/gfgmicroservicesdemo_tst
+          
+  prod:
+    employeeService:
+      config:
+        microservices:
+          addressServiceUrl: http://address-service-prod:8081/address-service
+        database:
+          url: jdbc:mysql://mysql-prod:3306/employeedb_prod?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    addressService:
+      config:
+        database:
+          url: jdbc:mysql://mysql-prod:3306/gfgmicroservicesdemo_prod

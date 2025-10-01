@@ -148,13 +148,110 @@ cd ~/IdeaProjects/gfg-microservices-demo
 mvn clean compile
 ```
 
+## Helm Configuration
+
+### ✅ Environment-Specific Configuration
+
+The project now includes Helm charts for deploying to different environments (dev, tst, prod) with configurable URLs.
+
+#### Key Configuration Change
+
+**Before (Hardcoded):**
+```java
+// Line 31 in EmployeeService.java
+AddressResponse addressResponse = restTemplate.getForObject(
+    "http://localhost:8081/address-service/address/{id}", 
+    AddressResponse.class, id);
+```
+
+**After (Configurable):**
+```java
+// EmployeeService.java with @Value annotation
+@Value("${microservices.address-service.url}")
+private String addressServiceUrl;
+
+// Usage in method
+AddressResponse addressResponse = restTemplate.getForObject(
+    addressServiceUrl + "/address/{id}", 
+    AddressResponse.class, id);
+```
+
+#### Helm Chart Structure
+```
+helm/gfg-microservices/
+├── Chart.yaml                    # Chart metadata
+├── values.yaml                  # Default values
+├── values-dev.yaml              # Development environment values
+├── values-tst.yaml              # Test environment values
+└── templates/
+    ├── _helpers.tpl             # Template helpers
+    ├── address-service-deployment.yaml
+    ├── address-service-service.yaml
+    ├── employee-service-deployment.yaml
+    └── employee-service-service.yaml
+```
+
+#### Environment-Specific URLs
+
+| Environment | Address Service URL |
+|-------------|--------------------|
+| **Local Development** | `http://localhost:8081/address-service` |
+| **Dev** | `http://address-service-dev:8081/address-service` |
+| **Test** | `http://address-service-tst:8081/address-service` |
+| **Production** | `http://address-service-prod:8081/address-service` |
+
+#### Deployment Commands
+
+```bash
+# Deploy to development
+helm install gfg-microservices-dev ./helm/gfg-microservices \
+  -f ./helm/gfg-microservices/values-dev.yaml
+
+# Deploy to test
+helm install gfg-microservices-tst ./helm/gfg-microservices \
+  -f ./helm/gfg-microservices/values-tst.yaml
+
+# Deploy to production with custom values
+helm install gfg-microservices-prod ./helm/gfg-microservices \
+  --set employeeService.config.microservices.addressServiceUrl=http://address-service-prod:8081/address-service
+
+# Upgrade existing deployment
+helm upgrade gfg-microservices-dev ./helm/gfg-microservices \
+  -f ./helm/gfg-microservices/values-dev.yaml
+```
+
+#### Configuration Properties
+
+The `microservices.address-service.url` property can be configured in multiple ways:
+
+1. **application.properties** (default for local development):
+   ```properties
+   microservices.address-service.url=http://localhost:8081/address-service
+   ```
+
+2. **Environment Variables** (Kubernetes deployment):
+   ```yaml
+   env:
+     - name: MICROSERVICES_ADDRESS_SERVICE_URL
+       value: http://address-service-dev:8081/address-service
+   ```
+
+3. **Helm Values** (values-dev.yaml, values-tst.yaml):
+   ```yaml
+   employeeService:
+     config:
+       microservices:
+         addressServiceUrl: http://address-service-dev:8081/address-service
+   ```
+
 ## Next Steps for Development
 
-1. **Port Configuration**: Configure different ports for each service to avoid conflicts
-2. **Service Communication**: Implement RestTemplate for inter-service communication
-3. **Database Setup**: Configure separate databases for each service
+1. **Container Images**: Build Docker images for both services
+2. **Service Communication**: Test RestTemplate communication between services
+3. **Database Setup**: Configure separate databases for each service per environment
 4. **API Gateway**: Consider adding an API Gateway for routing
 5. **Service Discovery**: Implement service discovery (Eureka) for production
+6. **Monitoring**: Add actuator endpoints and monitoring configuration
 
 ## Contributing
 

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.addressService.name }}
+  labels:
+    app: {{ .Values.addressService.name }}
+    chart: {{ include "gfg-microservices.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: {{ .Values.addressService.service.type }}
+  ports:
+    - port: {{ .Values.addressService.service.port }}
+      targetPort: {{ .Values.addressService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Values.addressService.name }}
+    release: {{ .Release.Name }}

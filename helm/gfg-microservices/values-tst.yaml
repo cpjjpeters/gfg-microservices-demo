@@ -1,0 +1,19 @@
+# Test environment values
+global:
+  environment: tst
+
+employeeService:
+  config:
+    microservices:
+      addressServiceUrl: http://address-service-tst:8081/address-service
+    database:
+      url: jdbc:mysql://mysql-tst:3306/employeedb_tst?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      username: tst_user
+      password: tst_password
+
+addressService:
+  config:
+    database:
+      url: jdbc:mysql://mysql-tst:3306/gfgmicroservicesdemo_tst
+      username: tst_user
+      password: tst_password
