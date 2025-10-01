@@ -244,14 +244,219 @@ The `microservices.address-service.url` property can be configured in multiple w
          addressServiceUrl: http://address-service-dev:8081/address-service
    ```
 
+## Docker Containerization
+
+### ✅ Containerized Services
+
+Both microservices are now fully containerized with Docker support for development and production deployments.
+
+#### Container Features
+
+- **Multi-stage builds**: Optimized image size with separate build and runtime stages
+- **Non-root user**: Security best practices with dedicated app user
+- **Health checks**: Built-in health monitoring for both services
+- **JVM optimization**: Container-aware JVM settings for optimal performance
+- **Environment configuration**: Fully configurable via environment variables
+
+#### Project Structure (Updated)
+```
+gfg-microservices-demo/
+├── address-service/
+│   ├── Dockerfile               # Multi-stage Docker build
+│   ├── .dockerignore           # Docker build context optimization
+│   └── src/...
+├── employee-service/
+│   ├── Dockerfile               # Multi-stage Docker build
+│   ├── .dockerignore           # Docker build context optimization
+│   └── src/...
+├── docker/
+│   └── mysql/init/             # Database initialization scripts
+├── helm/gfg-microservices/     # Kubernetes Helm charts
+├── docker-compose.yml          # Local development environment
+├── build-images.sh             # Docker image build script
+└── cleanup-docker.sh           # Docker cleanup script
+```
+
+### Quick Start with Docker
+
+#### Option 1: Docker Compose (Recommended for Development)
+```bash
+# Start all services with MySQL database
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+#### Option 2: Build and Run Individual Services
+```bash
+# Build all images
+./build-images.sh
+
+# Or build with specific tag
+./build-images.sh v1.0.0
+
+# Or build without cache
+./build-images.sh latest --no-cache
+```
+
+### Docker Commands
+
+#### Building Images
+```bash
+# Build both services (automated script)
+./build-images.sh [tag] [--no-cache]
+
+# Manual build - Address Service
+cd address-service
+docker build -t gfg/address-service:latest .
+
+# Manual build - Employee Service
+cd employee-service
+docker build -t gfg/employee-service:latest .
+```
+
+#### Running Containers
+```bash
+# Using Docker Compose (recommended)
+docker-compose up -d
+
+# Manual run with network
+docker network create gfg-network
+
+# Run MySQL
+docker run -d --name gfg-mysql --network gfg-network \
+  -e MYSQL_ROOT_PASSWORD=MySqlR00t \
+  -e MYSQL_DATABASE=gfgmicroservicesdemo \
+  -p 3306:3306 mysql:8.0
+
+# Run Address Service
+docker run -d --name gfg-address-service --network gfg-network \
+  -e SPRING_DATASOURCE_URL=jdbc:mysql://gfg-mysql:3306/gfgmicroservicesdemo \
+  -p 8081:8081 gfg/address-service:latest
+
+# Run Employee Service
+docker run -d --name gfg-employee-service --network gfg-network \
+  -e SPRING_DATASOURCE_URL=jdbc:mysql://gfg-mysql:3306/employeedb \
+  -e MICROSERVICES_ADDRESS_SERVICE_URL=http://gfg-address-service:8081/address-service \
+  -p 8080:8080 gfg/employee-service:latest
+```
+
+#### Container Management
+```bash
+# View running containers
+docker-compose ps
+
+# View logs
+docker-compose logs -f [service-name]
+docker-compose logs -f employee-service
+
+# Restart specific service
+docker-compose restart employee-service
+
+# Scale services (if needed)
+docker-compose up -d --scale employee-service=2
+```
+
+#### Cleanup
+```bash
+# Stop and remove containers, but keep images
+./cleanup-docker.sh
+
+# Complete cleanup (removes images and volumes)
+./cleanup-docker.sh --all
+
+# Manual cleanup
+docker-compose down -v --remove-orphans
+```
+
+### Environment Variables
+
+Both services support the following environment variables:
+
+#### Common Variables
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPRING_APPLICATION_NAME` | service-name | Application name |
+| `SERVER_PORT` | 8080/8081 | HTTP port |
+| `SERVER_SERVLET_CONTEXT_PATH` | /service-name | Context path |
+| `SPRING_DATASOURCE_URL` | - | Database URL |
+| `SPRING_DATASOURCE_USERNAME` | root | Database username |
+| `SPRING_DATASOURCE_PASSWORD` | - | Database password |
+| `SPRING_JPA_HIBERNATE_DDL_AUTO` | update | Hibernate DDL mode |
+
+#### Employee Service Specific
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MICROSERVICES_ADDRESS_SERVICE_URL` | - | Address service URL |
+| `SPRING_JPA_SHOW_SQL` | false | Show SQL queries |
+| `LOGGING_LEVEL_COM_GFG_EMPLOYEAPP` | INFO | Logging level |
+
+### Docker Image Details
+
+#### Base Images
+- **Build Stage**: `openjdk:17-jdk-slim`
+- **Runtime Stage**: `openjdk:17-jre-slim`
+
+#### Optimizations
+- Multi-stage builds for smaller runtime images
+- Non-root user for security
+- Container-aware JVM settings (`-XX:+UseContainerSupport`)
+- Memory optimization (`-XX:MaxRAMPercentage=75.0`)
+- Health checks for service monitoring
+- Proper signal handling for graceful shutdown
+
+#### Image Sizes (Approximate)
+- Address Service: ~280MB
+- Employee Service: ~285MB
+
+### Testing Containerized Services
+
+```bash
+# Start services
+docker-compose up -d
+
+# Wait for services to be healthy
+docker-compose ps
+
+# Test Address Service
+curl http://localhost:8081/address-service/actuator/health
+
+# Test Employee Service
+curl http://localhost:8080/employee-service/actuator/health
+
+# Test service communication (if you have test endpoints)
+curl http://localhost:8080/employee-service/employees/1
+```
+
+### Production Considerations
+
+1. **Registry**: Tag and push images to a container registry
+   ```bash
+   docker tag gfg/address-service:latest your-registry.com/gfg/address-service:v1.0.0
+   docker push your-registry.com/gfg/address-service:v1.0.0
+   ```
+
+2. **Security**: Use specific versions, scan for vulnerabilities
+   ```bash
+   docker scan gfg/address-service:latest
+   ```
+
+3. **Monitoring**: Use proper monitoring and logging solutions
+
+4. **Secrets**: Use proper secret management for passwords
+
 ## Next Steps for Development
 
-1. **Container Images**: Build Docker images for both services
-2. **Service Communication**: Test RestTemplate communication between services
-3. **Database Setup**: Configure separate databases for each service per environment
-4. **API Gateway**: Consider adding an API Gateway for routing
-5. **Service Discovery**: Implement service discovery (Eureka) for production
-6. **Monitoring**: Add actuator endpoints and monitoring configuration
+1. **✅ Container Images**: Docker images created and tested
+2. **Service Communication**: Test RestTemplate communication between containerized services
+3. **Container Registry**: Set up container registry for production images
+4. **Kubernetes Deployment**: Use Helm charts for Kubernetes deployment
+5. **Monitoring**: Add monitoring stack (Prometheus, Grafana)
+6. **Security Scanning**: Implement container security scanning
 
 ## Contributing
 

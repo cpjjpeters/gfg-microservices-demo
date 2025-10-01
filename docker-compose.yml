@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: gfg-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: MySqlR00t
+      MYSQL_DATABASE: gfgmicroservicesdemo
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - gfg-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pMySqlR00t"]
+      timeout: 20s
+      retries: 10
+
+  # Address Service
+  address-service:
+    build:
+      context: .
+      dockerfile: address-service/Dockerfile
+    container_name: gfg-address-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/gfgmicroservicesdemo
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=MySqlR00t
+      - SPRING_APPLICATION_NAME=address-service
+      - SERVER_PORT=8081
+      - SERVER_SERVLET_CONTEXT_PATH=/address-service
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - gfg-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/address-service/actuator/health"]
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Employee Service  
+  employee-service:
+    build:
+      context: .
+      dockerfile: employee-service/Dockerfile
+    container_name: gfg-employee-service
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/employeedb?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=MySqlR00t
+      - SPRING_APPLICATION_NAME=employee-service
+      - SERVER_PORT=8080
+      - SERVER_SERVLET_CONTEXT_PATH=/employee-service
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - MICROSERVICES_ADDRESS_SERVICE_URL=http://address-service:8081/address-service
+      - SPRING_JPA_SHOW_SQL=false
+      - LOGGING_LEVEL_COM_GFG_EMPLOYEAPP=INFO
+    depends_on:
+      mysql:
+        condition: service_healthy
+      address-service:
+        condition: service_healthy
+    networks:
+      - gfg-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/employee-service/actuator/health"]
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  gfg-network:
+    driver: bridge
