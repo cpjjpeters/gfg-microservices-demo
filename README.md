@@ -16,13 +16,13 @@ gfg-microservices-demo/
 ## Modules
 
 ### Address Service
-- **Port:** 8080 (default)
+- **Port:** 8081
 - **Description:** Manages address-related operations
 - **Database:** MySQL
 - **Key Dependencies:** Spring Boot Web, Spring Data JPA, ModelMapper
 
 ### Employee Service  
-- **Port:** 8080 (default - will need configuration for different ports)
+- **Port:** 8080
 - **Description:** Manages employee-related operations
 - **Database:** MySQL/H2
 - **Key Dependencies:** Spring Boot Web, Spring Data JPA, ModelMapper
@@ -58,14 +58,14 @@ cd employee-service
 mvn spring-boot:run
 ```
 
-**Note:** You'll need to configure different ports for each service to avoid conflicts. Update the `application.properties` file in each service:
+**Note:** The services are already configured with different ports to avoid conflicts. Current port configuration in `application.properties` files:
 
 ```properties
-# For address-service
+# address-service/src/main/resources/application.properties
 server.port=8081
 
-# For employee-service  
-server.port=8082
+# employee-service/src/main/resources/application.properties
+server.port=8080
 ```
 
 ## Configuration
